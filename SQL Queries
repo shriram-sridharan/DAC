@@ -1,0 +1,7 @@
+create table kcvisibility (key text, columnfamily text, acg int[]);
+create table accesscontrolgroups (groupno int, groupname text, primary key(groupno));
+
+insert into accesscontrolgroups values(2, 'level2');
+insert into kcvisibility values('shriram', 'dob', '{1,2,3}');
+
+select acg.groupname from kcvisibility kcv join accesscontrolgroups acg on acg.groupno = ANY(kcv.acg) where kcv.key='shriram' and kcv.columnfamily='dob' and acg.groupname='level4';

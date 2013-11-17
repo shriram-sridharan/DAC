@@ -2,3 +2,5 @@
 .metadata
 .cproject
 .project
+postgres*
+logfile
