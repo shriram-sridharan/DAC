@@ -1,7 +1,30 @@
 #include "ServerSocket.h"
 #include "SocketException.h"
-#include <string>
+#include <cstring>
 #include <pthread.h>
+#include <vector>
+using namespace std;
+
+vector<string> splitStringIntoTokens(char *data) {
+	vector<string> tokens;
+	char *pch = strtok (data, ";");
+	while (pch != NULL)
+	{
+		tokens.push_back(string(pch));
+		pch = strtok (NULL, ";");
+	}
+	return tokens;
+}
+
+bool processAndGetPermission(string data) {
+	char *nonconstdata = new char[data.length() + 1];
+	strcpy(nonconstdata, data.c_str());
+	vector<string> tokens = splitStringIntoTokens(nonconstdata);
+	for(auto it = tokens.begin(); it!=tokens.end(); it++)
+		cout << *it << endl;
+
+	return false;
+}
 
 void * serveRequest(void * inputsock) {
 	ServerSocket* new_sock = NULL;
@@ -13,6 +36,8 @@ void * serveRequest(void * inputsock) {
 			if (!new_sock->recv(data)) {
 				throw SocketException("Could not write to socket.");
 			}
+
+			bool permission = processAndGetPermission(data);
 			if (!new_sock->send(data)) {
 				throw SocketException("Could not write to socket.");
 			}
@@ -21,8 +46,7 @@ void * serveRequest(void * inputsock) {
 		pthread_exit(NULL);
 	}
 
-	if (new_sock != NULL)
-	{
+	if (new_sock != NULL) {
 		new_sock->closeClient();
 		delete new_sock;
 	}
@@ -44,14 +68,14 @@ int main(int argc, int argv[]) {
 			server.accept(new_sock);
 			no_threads++;
 
-			if(no_threads >= MAXCONNECTIONS) {
-				std::cout << " Max connections reached - " << MAXCONNECTIONS << std::endl;
+			if (no_threads >= MAXCONNECTIONS) {
+				std::cout << " Max connections reached - " << MAXCONNECTIONS
+						<< std::endl;
 				new_sock->send("-1");
 				new_sock->closeClient();
 				delete new_sock;
 				continue;
-			}
-			else {
+			} else {
 				new_sock->send("1");
 			}
 

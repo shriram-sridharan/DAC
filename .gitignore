@@ -4,3 +4,7 @@
 .project
 postgres*
 logfile
+.classpath
+.project
+.settings
+*.class

@@ -1,7 +1,8 @@
-create table kcvisibility (key text, columnfamily text, acg int[]);
-create table accesscontrolgroups (groupno int, groupname text, primary key(groupno));
+create table columnvisibility (rowid text, columnfamily text, accessvector bit(10));
 
-insert into accesscontrolgroups values(2, 'level2');
-insert into kcvisibility values('shriram', 'dob', '{1,2,3}');
+insert into columnvisibility values('www.cnn.com', 'anchor:www.aaa.com', '1111111110');
 
-select acg.groupname from kcvisibility kcv join accesscontrolgroups acg on acg.groupno = ANY(kcv.acg) where kcv.key='shriram' and kcv.columnfamily='dob' and acg.groupname='level4';
+select 1 from columnvisibility where 
+accessvector & B'1000000000' = B'1000000000' 
+and rowid='www.cnn.com' 
+and columnfamily='anchor:www.aaa.com' limit 1;
