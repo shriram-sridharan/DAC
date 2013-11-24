@@ -8,3 +8,6 @@ logfile
 .project
 .settings
 *.class
+hbase*
+YCSB
+zoo*

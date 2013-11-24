@@ -1,0 +1,5 @@
+YCSB
+1. For setting up the YCSB benchmarks - clone git, then compile it using maven
+http://blog.lars-francke.de/tag/hbase/
+2. Using workloadc to get the number of ops/second
+
