@@ -15,7 +15,7 @@ public class DACClient {
 		System.out.println("Connecting to hello world server");
 
 		ZMQ.Socket socket = context.socket(ZMQ.REQ);
-		socket.connect("tcp://localhost:5555");
+		socket.connect("tcp://127.0.0.1:5555");
 
 		InputStreamReader converter = new InputStreamReader(System.in);
 		BufferedReader in = new BufferedReader(converter);
