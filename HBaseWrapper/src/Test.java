@@ -1,13 +1,26 @@
 
 
-import org.apache.hadoop.hbase.KeyValue;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.ResultScanner;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Hashtable;
+import java.util.Scanner;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.util.Bytes;
+
+import utils.HAuthorization;
 import utils.HBaseUtils;
+import utils.HTableAuth;
+
+
 
 public class Test {
-	public static void main(String[] args) {
+
+/*	public static void main(String[] args) {
 		String[] families = {"Name", "Role"};
 		try {
 			HBaseUtils.creatTable("AuthorizationInfo", families);
@@ -36,5 +49,61 @@ public class Test {
 		}
 		
 	}
+*/
+	public static void insertData(String filename) throws Exception {
+		Scanner objSC = new Scanner(new FileReader(filename));
+		boolean first = true;
+		String line;
+		while(objSC.hasNext()) {
+			line = objSC.nextLine();
+			String[] tokens = line.split(",");
+			
+			if(tokens.length != 4)
+				continue;
+			else {
+				if(first == true){
+					HBaseUtils.creatTable("userdata", tokens);
+					first = false;
+				} else {
+					HBaseUtils.addRecord("userdata", tokens[0], tokens[1], "", tokens[3]);
+				}
+			}
+				
+			
+		}
+		
+	}
+	
+	
+	public static void main(String[] args) throws Exception {
+		//insertData("/scratch/pradap/courses/cs739/data/userdata.txt");
+		
+		Configuration conf = HBaseConfiguration.create();
+		HAuthorization authInfo = new HAuthorization("User1");
+		
+		
+		HTableAuth objHT = null;
+		try {
+		 objHT = new HTableAuth(authInfo, conf, "userdata");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println(authInfo.getBitVector());
+		
+		
+		Get g = new Get(Bytes.toBytes("Tom"));
+		g.addColumn(Bytes.toBytes("Age"), Bytes.toBytes(""));
+		g.addColumn(Bytes.toBytes("SSN"), Bytes.toBytes(""));
 
+		try {
+			Result r = objHT.get(g);
+			HBaseUtils.printResult(r);
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}	
 }
