@@ -3,3 +3,7 @@ YCSB
 http://blog.lars-francke.de/tag/hbase/
 2. Using workloadc to get the number of ops/second
 
+JZMQ:
+ZMQ.poll -> 3rd argument creates issues.
+New jzmq has problems with the way it is built as jar. Add external folder on the org.
+

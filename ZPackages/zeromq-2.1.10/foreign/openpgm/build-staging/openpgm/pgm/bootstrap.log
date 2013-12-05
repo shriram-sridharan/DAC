@@ -1,0 +1,5 @@
+configure.ac:24: installing `./config.guess'
+configure.ac:24: installing `./config.sub'
+configure.ac:15: installing `./install-sh'
+configure.ac:15: installing `./missing'
+Makefile.am: installing `./depcomp'
