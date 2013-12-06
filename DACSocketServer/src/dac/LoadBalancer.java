@@ -209,6 +209,12 @@ public class LoadBalancer extends Thread {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		new LoadBalancer("tcp://*:5555", "tcp://*:5556").startLoadBalancer();
+//		new LoadBalancer("tcp://*:5555", "tcp://*:5556").startLoadBalancer();
+		if(args.length < 2)
+		{
+			System.out.println("Args: FrontEndPoint, BackEndPoint");
+			return;
+		}
+		new LoadBalancer(args[0], args[1]).startLoadBalancer();
 	}
 }

@@ -119,16 +119,16 @@ public class StorageNode {
 		return access;
 	}
 	
-	private long handleMessage(long previous_heartbeat_rec_at, ZMsg msg) throws SQLException {
+	public long handleMessage(long previous_heartbeat_rec_at, ZMsg msg) throws SQLException {
 		// Get message
 		// - 3-part envelope + content -> request
 		// - 1-part HEARTBEAT -> heartbeat
 		if(msg.size() == 3) {
-			String requestKey = new String(msg.getLast().getData());
-			ZFrame address = msg.getFirst();
-			System.out.println("Received Message: "
-					+ requestKey + " from: "
-					+ new String(address.getData()));
+//			String requestKey = new String(msg.getLast().getData());
+//			ZFrame address = msg.getFirst();
+//			System.out.println("Received Message: "
+//					+ requestKey + " from: "
+//					+ new String(address.getData()));
 			handleQuery(msg, lbSocket);
 		}
 		else if (msg.size() == 1) {
@@ -148,14 +148,16 @@ public class StorageNode {
 		} else if (data.startsWith("ADD")) {
 			String[] newWorkers = data.split(";");
 			for(int i = 1; i < newWorkers.length; i++) {
-				System.out.println("Adding new worker in - " + mySocketBindEndPoint + ". the guy s - " + newWorkers[i]);
+				System.out.println("++Adding new worker in - " + mySocketBindEndPoint + ". the guy s - " + newWorkers[i]);
 				consistentHashingImpl.add(newWorkers[i]);
+				consistentHashingImpl.print();
 			}
 		} else if (data.startsWith("PURGE")) {
 			String[] oldWorkers = data.split(";");
 			for(int i = 1; i < oldWorkers.length; i++) {
-				System.out.println("Deleted worker in - " + mySocketBindEndPoint + ". the guy s - " + oldWorkers[i]);
+				System.out.println("--Deleted worker in - " + mySocketBindEndPoint + ". the guy s - " + oldWorkers[i]);
 				consistentHashingImpl.remove(oldWorkers[i]);
+				consistentHashingImpl.print();
 			}
 		}
 		else {
@@ -170,7 +172,7 @@ public class StorageNode {
 			throws SQLException {
 		ZFrame address = msg.getFirst();
 		final String requestKey = new String(msg.getLast().getData());
-		System.out.println("Address = " + address + " Msg = " + requestKey);
+//		System.out.println("Address = " + address + " Msg = " + requestKey);
 		
 		// Expecting request to be in form
 		// GET;RowID;ColumnFamily:Column;AuthorizationGroupVector
@@ -213,11 +215,11 @@ public class StorageNode {
 		final String nodeToHandle = consistentHashingImpl.get(requestKey);
 		if(nodeToHandle.equals(mySocketBindEndPoint))
 		{
-			System.out.println("Handling GET it myself");
+			System.out.println("Acting as Coordinator for GET\n");
 			ZFrame frame = new ZFrame (isAccessGranted(tokens) ? "Yes" : "No");
 			frame.send(socketToSend, 0);
 		} else {
-			System.out.println("This has to be handled by - " + nodeToHandle + " - spawning thread");
+			System.out.println("Forwarding GET to Coordinator " + nodeToHandle + "\n");
 			// spawn a new thread to handle this.
 			handoffToCoordinator(socketToSend, requestKey, nodeToHandle);
 		}
@@ -232,7 +234,7 @@ public class StorageNode {
 		String nodeToHandle = listofnodestorepl.get(0);
 		if(nodeToHandle.equals(mySocketBindEndPoint))
 		{
-			System.out.println("Handling PUT it myself");
+			System.out.println("\nActing as Coordinator to Handle PUT");
 			putPrepStatement.setString(1, tokens[1]);
 			putPrepStatement.setString(2, tokens[2]);
 			putPrepStatement.setString(3, tokens[3]);
@@ -243,11 +245,12 @@ public class StorageNode {
 			frame.send(socketToSend, 0);
 			
 			// Now replicate. Each one spawns a thread
+			System.out.println("Replicating In Other Nodes");
 			for (int i = 1; i < listofnodestorepl.size(); i++)
 				replicateData(requestKey, listofnodestorepl.get(i));
 			
 		} else {
-			System.out.println("This PUT has to be handled by - " + nodeToHandle + " - spawning thread");
+			System.out.println("\nForwarding PUT to - " + nodeToHandle + " - as per consistent Hashing");
 			// spawn a new thread to handle this.
 			handoffToCoordinator(socketToSend, requestKey, nodeToHandle);
 		}
@@ -270,10 +273,10 @@ public class StorageNode {
 				ZFrame z = new ZFrame(requestKey);
 				z.send(onthefly, 0);
 
-				System.out.println("Blocking Sent to other node to handle");
+//				System.out.println("Blocking Sent to other node to handle");
 				ZFrame recvFrame = ZFrame.recvFrame(onthefly);
 				String coordinatorResponse = new String(recvFrame.getData());
-				System.out.println("Forwarded Node sent - " + coordinatorResponse);
+				System.out.println("Forwarded Node Replied Back with - " + coordinatorResponse);
 
 				ZFrame frame = new ZFrame(coordinatorResponse);
 				frame.send(socketToSend, 0);
@@ -300,10 +303,9 @@ public class StorageNode {
 				ZFrame z = new ZFrame(modifiedRequest);
 				z.send(onthefly, 0);
 
-				System.out.println("Replicate Sent to other node to handle");
 				ZFrame recvFrame = ZFrame.recvFrame(onthefly);
 				String coordinatorResponse = new String(recvFrame.getData());
-				System.out.println("Forwarded Node sent - " + coordinatorResponse);
+				System.out.println("Replication Result at Site - " + coordinatorResponse);
 				onthefly.close();
 			}
 		};
@@ -361,19 +363,29 @@ public class StorageNode {
 				ZMsg msg = ZMsg.recvMsg(mySocket);
 				if (msg == null)
 					break; // Interrupted
-				System.out.println("Received Forwarded message - " + new String(msg.getLast().getData()));
 				handleQuery(msg, mySocket);
 			} 
 		}
 	}
 
 	public static void main(String[] args) throws Exception {
-		String lbconnectToEndPoint2 = "tcp://*:5556";
-		String mySocketBindEndPoint2 = "tcp://*:4558";
-		int virtualServersPerIp = 1;
-		int noReplicas = 2;
-		final StorageNode sn = new StorageNode(lbconnectToEndPoint2, mySocketBindEndPoint2, virtualServersPerIp,
-				noReplicas, "jdbc:postgresql://localhost:5432/dac", "shriram", ""); // backend
+		if(args.length < 7)
+		{
+			System.out.println("Args: LBConnectPoint, StorageNodeSocketPoint, NoVirtualServers, " +
+					"NoReplicasForPut, PostgresJDBC, PostgresUsername, PostgresPassword");
+			return;
+		}
+		
+//		String lbconnectToEndPoint2 = "tcp://*:5556";
+//		String mySocketBindEndPoint2 = "tcp://*:4558";
+//		int virtualServersPerIp = 1;
+//		int noReplicas = 2;
+//		final StorageNode sn = new StorageNode(lbconnectToEndPoint2, mySocketBindEndPoint2, virtualServersPerIp,
+//				noReplicas, "jdbc:postgresql://localhost:5432/dac1", "shriram", ""); // backend
+		
+		final StorageNode sn = new StorageNode(args[0], args[1],
+				Integer.parseInt(args[2]), Integer.parseInt(args[3]), args[4],
+				args[5], args[6]); 
 		
 		Thread t1 = new Thread() {
 			@Override

@@ -7,6 +7,10 @@ JZMQ:
 ZMQ.poll -> 3rd argument creates issues.
 New jzmq has problems with the way it is built as jar. Add external folder on the org.
 
+Usage:
+java -Djava.library.path=./jzmq-installed/lib/ -jar LoadBalancer.jar tcp://*:5555 tcp://*:5556
+java -Djava.library.path=./jzmq-installed/lib/ -jar StorageNode.jar tcp://*:5556 tcp://*:4555 3 2 jdbc:postgresql://localhost:5432/dac shriram ""
+java -Djava.library.path=./jzmq-installed/lib/ -jar StorageNode.jar tcp://*:5556 tcp://*:4556 3 2 jdbc:postgresql://localhost:5432/dac1 shriram ""
 
 TODO:
 Redistribution of keys after a new worker is added.
@@ -17,8 +21,6 @@ same way of creating identity depends on that.
 nodeToHandle is REQ socket
 How to prove replication - semantics of PUT
 
-
-
 For Presentation:
 User Based Access Control
 Live Demo in the presentation + Graphs of time taken
@@ -26,3 +28,4 @@ Need to work on the data model
 
 consistent hashing
 replication - first send then replicate - coordinator
+
