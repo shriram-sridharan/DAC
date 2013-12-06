@@ -1,0 +1,10 @@
+Name,Age,SSN,MaritalStatus
+Tom,Age,,23
+Tom,SSN,,12345
+Tom,MaritalStatus,,Single
+Dick,Age,,24
+Dick,SSN,,12346
+Dick,MaritalStatus,,Married
+Dick,Age,,25
+Dick,SSN,,12347
+Dick,MaritalStatus,,Single
