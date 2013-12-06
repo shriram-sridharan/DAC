@@ -7,3 +7,22 @@ JZMQ:
 ZMQ.poll -> 3rd argument creates issues.
 New jzmq has problems with the way it is built as jar. Add external folder on the org.
 
+
+TODO:
+Redistribution of keys after a new worker is added.
+Heartbeat should be a separate thread.
+Load Balancer - getNextWorker() - optimistic 
+consistent hashing md5
+same way of creating identity depends on that.
+nodeToHandle is REQ socket
+How to prove replication - semantics of PUT
+
+
+
+For Presentation:
+User Based Access Control
+Live Demo in the presentation + Graphs of time taken
+Need to work on the data model
+
+consistent hashing
+replication - first send then replicate - coordinator

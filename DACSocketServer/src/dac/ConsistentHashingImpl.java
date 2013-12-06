@@ -1,5 +1,6 @@
 package dac;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -11,12 +12,8 @@ public class ConsistentHashingImpl implements IConsistentHashing {
 	private final int numberOfReplicas;
 	private final SortedMap<Integer, String> circle = new TreeMap<Integer, String>();
 
-	public ConsistentHashingImpl(int numberOfReplicas, Collection<String> nodes) {
+	public ConsistentHashingImpl(int numberOfReplicas) {
 		this.numberOfReplicas = numberOfReplicas;
-
-		for (String node : nodes) {
-			add(node);
-		}
 	}
 
 	/*
@@ -60,6 +57,43 @@ public class ConsistentHashingImpl implements IConsistentHashing {
 			hash = tailMap.isEmpty() ? circle.firstKey() : tailMap.firstKey();
 		}
 		return circle.get(hash);
+	}
+	
+	@Override
+	public ArrayList<String> getNodesToReplicate(String key, int numberOfReplicas) {
+		if (circle.isEmpty()) {
+			return null;
+		}
+		
+		assert(numberOfReplicas < circle.size());
+		int hash = key.hashCode();
+		SortedMap<Integer, String> tailMap = circle.tailMap(hash);
+
+		// relying on sortedness
+		Collection<String> values = tailMap.isEmpty() ? circle.values()	: tailMap.values();
+		ArrayList<String> nodesToReplicate = new ArrayList<String>();
+		for (String node : values) {
+			if (numberOfReplicas <= 0)
+				break;
+
+			nodesToReplicate.add(node);
+			numberOfReplicas--;
+		}
+		
+		//wrap around case.
+		if(numberOfReplicas > 0)
+		{
+			for (String node : circle.values()) {
+				if (numberOfReplicas <= 0)
+					break;
+
+				nodesToReplicate.add(node);
+				numberOfReplicas--;
+			}
+		}
+		
+		assert(nodesToReplicate.size() == numberOfReplicas);
+		return nodesToReplicate;
 	}
 
 }

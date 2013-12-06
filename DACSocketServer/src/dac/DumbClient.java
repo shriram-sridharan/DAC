@@ -22,7 +22,7 @@ public class DumbClient {
 	        worker.setIdentity(identity.getBytes());
 	        worker.connect(connectendpoint);
 	        System.out.println(" My id = " + identity);
-	        while (true) {
+	        for(int i=0;i <4;i++){
 	        	Thread.sleep(1000);
 	        	
 	        	ZFrame z = new ZFrame("PUT;www.cnn.com;anchor:www.aaa.com;1111111110");
