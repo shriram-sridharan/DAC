@@ -150,14 +150,14 @@ public class StorageNode {
 			for(int i = 1; i < newWorkers.length; i++) {
 				System.out.println("++Adding new worker in - " + mySocketBindEndPoint + ". the guy s - " + newWorkers[i]);
 				consistentHashingImpl.add(newWorkers[i]);
-				consistentHashingImpl.print();
+//				consistentHashingImpl.print();
 			}
 		} else if (data.startsWith("PURGE")) {
 			String[] oldWorkers = data.split(";");
 			for(int i = 1; i < oldWorkers.length; i++) {
 				System.out.println("--Deleted worker in - " + mySocketBindEndPoint + ". the guy s - " + oldWorkers[i]);
 				consistentHashingImpl.remove(oldWorkers[i]);
-				consistentHashingImpl.print();
+//				consistentHashingImpl.print();
 			}
 		}
 		else {
@@ -212,7 +212,7 @@ public class StorageNode {
 		System.out.println(tokens[2]);
 		System.out.println(tokens[3]);
 		
-		final String nodeToHandle = consistentHashingImpl.get(requestKey);
+		final String nodeToHandle = consistentHashingImpl.get(tokens[1] + tokens[2]);
 		if(nodeToHandle.equals(mySocketBindEndPoint))
 		{
 			System.out.println("Acting as Coordinator for GET\n");
@@ -228,7 +228,7 @@ public class StorageNode {
 	private void handlePUT(final Socket socketToSend, final String requestKey,
 			String[] tokens) throws SQLException {
 		final ArrayList<String> listofnodestorepl = 
-				consistentHashingImpl.getNodesToReplicate(requestKey, numberOfReplicas);
+				consistentHashingImpl.getNodesToReplicate(tokens[1] + tokens[2], numberOfReplicas);
 		assert(numberOfReplicas > 0);
 		
 		String nodeToHandle = listofnodestorepl.get(0);

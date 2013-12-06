@@ -25,7 +25,7 @@ public class DumbClient {
 	        for(int i=0;i <4;i++){
 	        	Thread.sleep(1000);
 	        	
-	        	ZFrame z = new ZFrame("PUT;www.cnn.com;anchor:www.aaa.com;1111111110");
+	        	ZFrame z = new ZFrame("GET;www.nbc.com;anchor:www.shriram.com;1110111110");
 		        z.send(worker, 0);
 	            
 		        System.out.println("Sent message - waiting for reply");
