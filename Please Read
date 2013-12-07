@@ -9,8 +9,8 @@ New jzmq has problems with the way it is built as jar. Add external folder on th
 
 Usage:
 java -Djava.library.path=./jzmq-installed/lib/ -jar LoadBalancer.jar tcp://*:5555 tcp://*:5556
-java -Djava.library.path=./jzmq-installed/lib/ -jar StorageNode.jar tcp://*:5556 tcp://*:4555 3 2 jdbc:postgresql://localhost:5432/dac shriram ""
-java -Djava.library.path=./jzmq-installed/lib/ -jar StorageNode.jar tcp://*:5556 tcp://*:4556 3 2 jdbc:postgresql://localhost:5432/dac1 shriram ""
+java -Djava.library.path=./jzmq-installed/lib/ -jar StorageNode.jar tcp://*:5556 tcp://*:4555 3 3 jdbc:postgresql://localhost:5432/dac shriram ""
+java -Djava.library.path=./jzmq-installed/lib/ -jar StorageNode.jar tcp://*:5556 tcp://*:4556 3 3 jdbc:postgresql://localhost:5432/dac1 shriram ""
 
 TODO:
 Redistribution of keys after a new worker is added.
@@ -24,6 +24,10 @@ For Presentation:
 User Based Access Control
 Live Demo in the presentation + Graphs of time taken
 Need to work on the data model
-consistent hashing
+consistent hashing - MD5 Hash of objects and key
 replication - first send then replicate - coordinator
 
+21 handled in 31348 (ms) - 1 node, 3 replicas
+20 handled in 67834 (ms) - 3 replicas
+21 handled in 47792 (ms) - 2 replicas
+20 handled in 49354 (ms) - 1 replca??

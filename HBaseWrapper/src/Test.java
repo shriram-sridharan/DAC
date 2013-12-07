@@ -6,7 +6,9 @@ import java.util.Scanner;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import utils.GlueZMQ;
@@ -74,7 +76,7 @@ public class Test {
 	
 	
 	public static void main(String[] args) throws Exception {
-		//insertData("/scratch/pradap/courses/cs739/data/userdata.txt");
+//		insertData("/home/shriram/Desktop/DAC/HBaseWrapper/src/userdata.txt");
 		
 		Configuration conf = HBaseConfiguration.create();
 		HAuthorization authInfo = new HAuthorization("User1");
@@ -90,26 +92,26 @@ public class Test {
 		//System.out.println(authInfo.getBitVector());
 		GlueZMQ.setIPAddres("localhost");
 		GlueZMQ.setPortNumber("15555");
-
+//
+//		
+//		
+//		Put p = new Put(Bytes.toBytes("Tom"));
+//		p.add(Bytes.toBytes("Age"), Bytes.toBytes(""), Bytes.toBytes("35"));
+//		objHT.put(p);
 		
 		
-		Put p = new Put(Bytes.toBytes("Tom"));
-		p.add(Bytes.toBytes("Age"), Bytes.toBytes(""), Bytes.toBytes("35"));
-		objHT.put(p);
-		
-		/*
 		   Get g = new Get(Bytes.toBytes("Tom"));
            g.addColumn(Bytes.toBytes("Age"), Bytes.toBytes(""));
            g.addColumn(Bytes.toBytes("SSN"), Bytes.toBytes(""));
 
            try {
                    Result r = objHT.get(g);
-                   HBaseUtils.printResult(r);
+//                   HBaseUtils.printResult(r);
                    
            } catch (IOException e) {
                    // TODO Auto-generated catch block
                    e.printStackTrace();
-           }*/
+           }
 
 		
 	}	

@@ -22,10 +22,11 @@ public class DumbClient {
 	        worker.setIdentity(identity.getBytes());
 	        worker.connect(connectendpoint);
 	        System.out.println(" My id = " + identity);
-	        for(int i=0;i <4;i++){
+	        String rowid = "www.cnn.com";
+	        while(true){
 	        	Thread.sleep(1000);
-	        	
-	        	ZFrame z = new ZFrame("GET;www.nbc.com;anchor:www.shriram.com;1110111110");
+	        	rowid+= Math.random();
+	        	ZFrame z = new ZFrame("PUT;" +rowid + ";anchor:www.shriram.com;1110111110");
 		        z.send(worker, 0);
 	            
 		        System.out.println("Sent message - waiting for reply");

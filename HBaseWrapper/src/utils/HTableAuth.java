@@ -1,6 +1,7 @@
 package utils;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.zeromq.ZMQ;
 
@@ -30,7 +32,10 @@ public class HTableAuth extends HTable {
 		//GET;tablename;key;cf;columnname;AuthBitVector
 		
 		StringBuffer objSB = new StringBuffer();
-		objSB.append("GET;").append(tableName).append(";").append(key).append(";").append(columnFamily).append(";").append(";")
+//		objSB.append("GET;").append(tableName).append(";").append(key).append(";").append(columnFamily).append(";").append(";")
+//		.append(objAuth.getBitVector());
+		
+		objSB.append("GET;").append(key).append(";").append(columnFamily).append(";")
 		.append(objAuth.getBitVector());
 		System.out.println(objSB.toString());
 		boolean retValue = GlueZMQ.isAuthorized(objSB.toString());
@@ -44,7 +49,9 @@ public class HTableAuth extends HTable {
 		//PUT;tablename;key;cf;columnname;AuthBitVector
 		
 		StringBuffer objSB = new StringBuffer();
-		objSB.append("PUT;").append(tableName).append(";").append(key).append(";").append(columnFamily).append(";").append(";")
+//		objSB.append("PUT;").append(tableName).append(";").append(key).append(";").append(columnFamily).append(";").append(";")
+//		.append(objAuth.getBitVector());
+		objSB.append("PUT;").append(key).append(";").append(columnFamily).append(";")
 		.append(objAuth.getBitVector());
 		System.out.println(objSB.toString());
 		boolean retValue = GlueZMQ.isAuthorized(objSB.toString());
@@ -77,6 +84,7 @@ public class HTableAuth extends HTable {
 					byte[] b = iter.next();
 					String rowKey = Bytes.toString(get.getRow());
 					String columnFamily = Bytes.toString(b);
+					System.out.println(columnFamily);
 					if(isGetAuthorized(rowKey, columnFamily) == false) {
 						authFlag = false;
 						break;
@@ -92,7 +100,7 @@ public class HTableAuth extends HTable {
 			return super.get(get);
 	}
 	
-	public void put(Put put) throws IOException {
+	public void put(Put put) {
 		
 		boolean authFlag = true;
 		Map<byte[], List<KeyValue>> objM =  put.getFamilyMap();
@@ -101,7 +109,13 @@ public class HTableAuth extends HTable {
 		for(byte[] b : objM.keySet()) {
 			String columnFamily = Bytes.toString(b);
 			if(isPutAuthorized(rowKey, columnFamily)) {
-				super.put(put);
+				try {
+					super.put(put);
+				} catch (RetriesExhaustedWithDetailsException e) {
+					e.printStackTrace();
+				} catch (InterruptedIOException e) {
+					e.printStackTrace();
+				}
 			} else {
 				//System.err.println("Put with current columnfamilies is not authorized");
 			}

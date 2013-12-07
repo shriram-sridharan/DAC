@@ -37,7 +37,8 @@ public class StorageNode {
 	private ConsistentHashingImpl consistentHashingImpl;
 	private PreparedStatement putPrepStatement;
 	private int numberOfReplicas;
-
+	public int putRequestsHandled = 0;
+	
 	public StorageNode(String lbconnectToEndPoint, String mySocketBindEndPoint,
 			int virtualServersPerIp, int noReplicas, String postgresurl, String username,
 			String password) throws SQLException, ClassNotFoundException {
@@ -191,6 +192,7 @@ public class StorageNode {
 		else if ("GET".equals(tokens[0])) {
 			handleGET(socketToSend, requestKey, tokens);
 		} else if ("PUT".equals(tokens[0])) {
+			putRequestsHandled++;
 			handlePUT(socketToSend, requestKey, tokens);
 		} else if ("REPL".equals(tokens[0])) {
 			System.out.println("Handling PUT Replicated");
@@ -408,8 +410,31 @@ public class StorageNode {
 				}
 			}
 		};
+		
+		Thread t3 = new Thread() {
+			@Override
+			public void run() {
+				try {
+					long startTime = System.currentTimeMillis();
+					int prev = 0;
+					while (true) {
+						if (sn.putRequestsHandled % 5 == 0
+								&& prev != sn.putRequestsHandled) {
+							prev = sn.putRequestsHandled;
+							long timenow = System.currentTimeMillis() - startTime;
+							System.out.println("Report: "
+									+ sn.putRequestsHandled + " handled in "
+									+ timenow + " (ms)");
+						}
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		};
 
 		t2.start(); // start the forwarded request handler socket first
 		t1.start();
+		t3.start();
 	}
 }
