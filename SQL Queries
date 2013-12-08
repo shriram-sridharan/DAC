@@ -6,3 +6,10 @@ select 1 from columnvisibility where
 accessvector & B'1000000000' = B'1000000000' 
 and rowid='www.cnn.com' 
 and columnfamily='anchor:www.aaa.com' limit 1;
+
+Parse 2:
+create table TableLevelAuthorization (TableName varchar, columnname varchar, AccessAuth bit(10));
+create table userdata (rowid varchar, age_get bit(10), age_put bit(10), ssn_get bit(10), ssn_put bit(10), maritalstatus_get bit(10), maritalstatus_put bit(10));
+
+select 1 from userdata where rowid = 'www.abc.com2' and age_put & B'0111111001' >= B'0000000001';
+GET;userdata;www.abc.com2;age;0111111001

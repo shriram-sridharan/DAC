@@ -91,7 +91,7 @@ public class Test {
 		}
 		//System.out.println(authInfo.getBitVector());
 		GlueZMQ.setIPAddres("localhost");
-		GlueZMQ.setPortNumber("15555");
+		GlueZMQ.setPortNumber("5555");
 //
 //		
 //		

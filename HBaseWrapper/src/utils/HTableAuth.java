@@ -29,14 +29,16 @@ public class HTableAuth extends HTable {
 	}
 	
 	private boolean isGetAuthorized(String key, String columnFamily) {
-		//GET;tablename;key;cf;columnname;AuthBitVector
+		/*
+		 * New Authorization Rule - GET;tablename;key;cf_columnname;UserAuthBitVector 
+		 */
 		
 		StringBuffer objSB = new StringBuffer();
-//		objSB.append("GET;").append(tableName).append(";").append(key).append(";").append(columnFamily).append(";").append(";")
-//		.append(objAuth.getBitVector());
-		
-		objSB.append("GET;").append(key).append(";").append(columnFamily).append(";")
+		objSB.append("GET;").append(tableName).append(";").append(key).append(";").append(columnFamily).append(";")
 		.append(objAuth.getBitVector());
+		
+//		objSB.append("GET;").append(key).append(";").append(columnFamily).append(";")
+//		.append(objAuth.getBitVector());
 		System.out.println(objSB.toString());
 		boolean retValue = GlueZMQ.isAuthorized(objSB.toString());
 		if(retValue == true) {
@@ -45,14 +47,17 @@ public class HTableAuth extends HTable {
 		}
 		return false;
 	}
+	
 	private boolean isPutAuthorized(String key, String columnFamily) {
-		//PUT;tablename;key;cf;columnname;AuthBitVector
-		
+		/*
+		 * New Authorization Rule - PUT;tablename;key;cf_columnname;UserAuthBitVector;GetAuthBitVector;PutAuthBitVector 
+		 */
 		StringBuffer objSB = new StringBuffer();
-//		objSB.append("PUT;").append(tableName).append(";").append(key).append(";").append(columnFamily).append(";").append(";")
+		objSB.append("PUT;").append(tableName).append(";").append(key).append(";").append(columnFamily).append(";")
+		.append(objAuth.getBitVector()).append(";").append(objAuth.getBitVector()).append(objAuth.getBitVector());
+//		objSB.append("PUT;").append(key).append(";").append(columnFamily).append(";")
 //		.append(objAuth.getBitVector());
-		objSB.append("PUT;").append(key).append(";").append(columnFamily).append(";")
-		.append(objAuth.getBitVector());
+
 		System.out.println(objSB.toString());
 		boolean retValue = GlueZMQ.isAuthorized(objSB.toString());
 		if(retValue == true) {
@@ -61,16 +66,14 @@ public class HTableAuth extends HTable {
 		}
 		return false;
 	}
+	
 	// override required methods
 	public Result get(Get get) throws IOException {
 		// 2 cases 
 		// case 1: If the column families are added
 		// if all the columns are allowed: fetch the row, else return null;
-		  
-		
 		// case 2: they are not.
 			// this has to be handled.
-		
 		
 		boolean authFlag = true;
 		if(get.hasFamilies()) {
@@ -84,6 +87,7 @@ public class HTableAuth extends HTable {
 					byte[] b = iter.next();
 					String rowKey = Bytes.toString(get.getRow());
 					String columnFamily = Bytes.toString(b);
+					// shriram - not working.
 					System.out.println(columnFamily);
 					if(isGetAuthorized(rowKey, columnFamily) == false) {
 						authFlag = false;

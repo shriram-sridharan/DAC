@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -32,7 +33,6 @@ public class StorageNode {
 	private final String lbconnectToEndPoint;
 	private ZContext ctx;
 	private Connection conn;
-	private PreparedStatement getPrepStatement;
 	private final String mySocketBindEndPoint;
 	private ConsistentHashingImpl consistentHashingImpl;
 	private PreparedStatement putPrepStatement;
@@ -51,10 +51,6 @@ public class StorageNode {
 		createNewForwardedRequestHandlerSocket();
 		Class.forName("org.postgresql.Driver");
 		conn = DriverManager.getConnection(postgresurl, username, password);
-		getPrepStatement = conn.prepareStatement(" SELECT 1 FROM COLUMNVISIBILITY WHERE "
-				+ " ROWID = ? " + " AND COLUMNFAMILY = ? "
-				+ " AND ACCESSVECTOR & ? :: bit(10) = ? :: bit(10)"
-				+ " LIMIT 1");
 		putPrepStatement = conn.prepareStatement("INSERT INTO COLUMNVISIBILITY VALUES(?,?,? :: bit(10))");
 		consistentHashingImpl = new ConsistentHashingImpl(virtualServersPerIp);
 	}
@@ -106,16 +102,20 @@ public class StorageNode {
 	private boolean isAccessGranted(String[] tokens) throws SQLException {
 		
 		boolean access = false;
-		getPrepStatement.setString(1, tokens[1]);
-		getPrepStatement.setString(2, tokens[2]);
-		getPrepStatement.setString(3, tokens[3]);
-		getPrepStatement.setString(4, tokens[3]);
-		ResultSet rs = getPrepStatement.executeQuery();
+		
+		Statement st = conn.createStatement();
+		ResultSet rs = st.executeQuery(" SELECT 1 FROM " + tokens[1] + " WHERE " + " ROWID = '"
+				+ tokens[2] + "' AND " + tokens[3] + "_get & " + tokens[4]
+				+ " :: bit(10)  >= B'0000000001'");
+//		getPrepStatement.setString(1, tokens[1]); //tablename
+//		getPrepStatement.setString(2, tokens[2]); //rowid
+//		getPrepStatement.setString(3, tokens[3] + "_get"); //columnname + _get
+//		getPrepStatement.setString(4, tokens[4]); // userauthvector
 
 		if (rs.next())
 			access = true;
 
-		rs.close();
+		st.close();
 		
 		return access;
 	}
@@ -184,15 +184,9 @@ public class StorageNode {
 		String[] tokens = requestKey.split(";");
 		assert(tokens.length > 0);
 		
-		if(tokens.length != 4 && tokens.length != 5) 
-		{
-		 	ZFrame frame = new ZFrame ("Ill-Formed Query - GET/PUT;RowID;ColumnFamily:Column;AuthorizationGroupVector");
-	    	frame.send(socketToSend, 0); 
-		}
-		else if ("GET".equals(tokens[0])) {
+		if ("GET".equals(tokens[0])) {
 			handleGET(socketToSend, requestKey, tokens);
 		} else if ("PUT".equals(tokens[0])) {
-			putRequestsHandled++;
 			handlePUT(socketToSend, requestKey, tokens);
 		} else if ("REPL".equals(tokens[0])) {
 			System.out.println("Handling PUT Replicated");
@@ -210,11 +204,18 @@ public class StorageNode {
 
 	private void handleGET(final Socket socketToSend, final String requestKey,
 			String[] tokens) throws SQLException {
+		if(tokens.length != 5) {
+			ZFrame frame = new ZFrame ("Ill-Formed Query - GET;tablename;key;cf_columnname;UserAuthBitVector");
+	    	frame.send(socketToSend, 0);
+	    	return;
+		}
+		
 		System.out.println(tokens[1]);
 		System.out.println(tokens[2]);
 		System.out.println(tokens[3]);
+		System.out.println(tokens[4]);
 		
-		final String nodeToHandle = consistentHashingImpl.get(tokens[1] + tokens[2]);
+		final String nodeToHandle = consistentHashingImpl.get(tokens[1] + tokens[2]); //tablename + key
 		if(nodeToHandle.equals(mySocketBindEndPoint))
 		{
 			System.out.println("Acting as Coordinator for GET\n");
@@ -229,6 +230,14 @@ public class StorageNode {
 
 	private void handlePUT(final Socket socketToSend, final String requestKey,
 			String[] tokens) throws SQLException {
+		if(tokens.length != 7) {
+			ZFrame frame = new ZFrame(
+					"Ill-Formed Query - PUT;tablename;key;cf_columnname;UserAuthBitVector;GetAuthBitVector;PutAuthBitVector");
+	    	frame.send(socketToSend, 0);
+	    	return;
+		}
+		
+		putRequestsHandled++;
 		final ArrayList<String> listofnodestorepl = 
 				consistentHashingImpl.getNodesToReplicate(tokens[1] + tokens[2], numberOfReplicas);
 		assert(numberOfReplicas > 0);

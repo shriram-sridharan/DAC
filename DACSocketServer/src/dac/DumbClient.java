@@ -22,13 +22,15 @@ public class DumbClient {
 	        worker.setIdentity(identity.getBytes());
 	        worker.connect(connectendpoint);
 	        System.out.println(" My id = " + identity);
-	        String rowid = "www.cnn.com";
+//	        String rowid = "www.cnn.com";
 	        while(true){
 	        	Thread.sleep(1000);
-	        	rowid+= Math.random();
-	        	ZFrame z = new ZFrame("PUT;" +rowid + ";anchor:www.shriram.com;1110111110");
+//	        	rowid+= Math.random();
+//	        	ZFrame z = new ZFrame("PUT;" +rowid + ";anchor:www.shriram.com;1110111110");
+//		        z.send(worker, 0);
+	        	
+	        	ZFrame z = new ZFrame("GET;usertable;www.abc.com2;age;0111111001");
 		        z.send(worker, 0);
-	            
 		        System.out.println("Sent message - waiting for reply");
 		        ZFrame recvFrame = ZFrame.recvFrame(worker);
 	            if(recvFrame == null)
