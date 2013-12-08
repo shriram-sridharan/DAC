@@ -29,7 +29,7 @@ public class DumbClient {
 //	        	ZFrame z = new ZFrame("PUT;" +rowid + ";anchor:www.shriram.com;1110111110");
 //		        z.send(worker, 0);
 	        	
-	        	ZFrame z = new ZFrame("GET;usertable;www.abc.com2;age;0111111001");
+	        	ZFrame z = new ZFrame("PUT;userdata;Tom2;age;0111111001;1111111111;1111111111");
 		        z.send(worker, 0);
 		        System.out.println("Sent message - waiting for reply");
 		        ZFrame recvFrame = ZFrame.recvFrame(worker);

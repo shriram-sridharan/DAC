@@ -53,8 +53,8 @@ public class HTableAuth extends HTable {
 		 * New Authorization Rule - PUT;tablename;key;cf_columnname;UserAuthBitVector;GetAuthBitVector;PutAuthBitVector 
 		 */
 		StringBuffer objSB = new StringBuffer();
-		objSB.append("PUT;").append(tableName).append(";").append(key).append(";").append(columnFamily).append(";")
-		.append(objAuth.getBitVector()).append(";").append(objAuth.getBitVector()).append(objAuth.getBitVector());
+		objSB.append("PUT;").append(tableName).append(";").append(key).append(";").append("ssn").append(";")
+		.append(objAuth.getBitVector()).append(";").append(objAuth.getBitVector()).append(";").append(objAuth.getBitVector());
 //		objSB.append("PUT;").append(key).append(";").append(columnFamily).append(";")
 //		.append(objAuth.getBitVector());
 
@@ -89,7 +89,7 @@ public class HTableAuth extends HTable {
 					String columnFamily = Bytes.toString(b);
 					// shriram - not working.
 					System.out.println(columnFamily);
-					if(isGetAuthorized(rowKey, columnFamily) == false) {
+					if(isGetAuthorized(rowKey, "age") == false) {
 						authFlag = false;
 						break;
 					}

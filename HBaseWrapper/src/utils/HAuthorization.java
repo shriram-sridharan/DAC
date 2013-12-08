@@ -44,16 +44,16 @@ public HAuthorization(String userName) {
 		for(int i = 0; i < authValues.length; i ++) {
 			String role = authValues[i].toLowerCase();
 			if(role.equalsIgnoreCase("admin")) {
-				sAuth.replace(0, 0, "1");
+				sAuth.replace(0, 1, "1");
 				
 			} else if(role.equalsIgnoreCase("system")) {
-				sAuth.replace(1, 1, "1");
+				sAuth.replace(1, 2, "1");
 			} else if(role.equalsIgnoreCase("poweruser")) {
-				sAuth.replace(2, 2, "1");
+				sAuth.replace(2, 3, "1");
 			} else if(role.equalsIgnoreCase("user")) {
-				sAuth.replace(3, 3, "1");
+				sAuth.replace(3, 4, "1");
 			} else if(role.equalsIgnoreCase("guest")) {
-				sAuth.replace(4, 4, "1");
+				sAuth.replace(4, 5, "1");
 			}
 		}
 		this.bitVector = sAuth.toString();

@@ -2,7 +2,6 @@ package dac;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -35,7 +34,6 @@ public class StorageNode {
 	private Connection conn;
 	private final String mySocketBindEndPoint;
 	private ConsistentHashingImpl consistentHashingImpl;
-	private PreparedStatement putPrepStatement;
 	private int numberOfReplicas;
 	public int putRequestsHandled = 0;
 	
@@ -51,7 +49,6 @@ public class StorageNode {
 		createNewForwardedRequestHandlerSocket();
 		Class.forName("org.postgresql.Driver");
 		conn = DriverManager.getConnection(postgresurl, username, password);
-		putPrepStatement = conn.prepareStatement("INSERT INTO COLUMNVISIBILITY VALUES(?,?,? :: bit(10))");
 		consistentHashingImpl = new ConsistentHashingImpl(virtualServersPerIp);
 	}
 	
@@ -103,14 +100,11 @@ public class StorageNode {
 		
 		boolean access = false;
 		
+		// GET;tablename;key;cf_columnname;UserAuthBitVector 
 		Statement st = conn.createStatement();
 		ResultSet rs = st.executeQuery(" SELECT 1 FROM " + tokens[1] + " WHERE " + " ROWID = '"
 				+ tokens[2] + "' AND " + tokens[3] + "_get & " + tokens[4]
 				+ " :: bit(10)  >= B'0000000001'");
-//		getPrepStatement.setString(1, tokens[1]); //tablename
-//		getPrepStatement.setString(2, tokens[2]); //rowid
-//		getPrepStatement.setString(3, tokens[3] + "_get"); //columnname + _get
-//		getPrepStatement.setString(4, tokens[4]); // userauthvector
 
 		if (rs.next())
 			access = true;
@@ -190,12 +184,14 @@ public class StorageNode {
 			handlePUT(socketToSend, requestKey, tokens);
 		} else if ("REPL".equals(tokens[0])) {
 			System.out.println("Handling PUT Replicated");
-			putPrepStatement.setString(1, tokens[2]);
-			putPrepStatement.setString(2, tokens[3]);
-			putPrepStatement.setString(3, tokens[4]);
-			putPrepStatement.execute();
-			ZFrame frame = new ZFrame ("Put done at " + mySocketBindEndPoint);
-	    	frame.send(socketToSend, 0);
+			// REPL;PUT;tablename;key;cf_columnname;UserAuthBitVector;GetAuthBitVector;PutAuthBitVector
+			// Check if allowed to execute put
+			for(int i = 1; i < 8; i++)
+				tokens[i - 1] = tokens[i];
+			
+			Statement st = conn.createStatement();
+			handlePUTAfterAllowedAccess(socketToSend, tokens, st);
+			st.close();
 		} else {
 			ZFrame frame = new ZFrame ("Unhandled Request - " + tokens[0]);
 	    	frame.send(socketToSend, 0); 
@@ -246,14 +242,21 @@ public class StorageNode {
 		if(nodeToHandle.equals(mySocketBindEndPoint))
 		{
 			System.out.println("\nActing as Coordinator to Handle PUT");
-			putPrepStatement.setString(1, tokens[1]);
-			putPrepStatement.setString(2, tokens[2]);
-			putPrepStatement.setString(3, tokens[3]);
-			putPrepStatement.execute();
 			
-			// first send reply to client
-			ZFrame frame = new ZFrame ("Put done");
-			frame.send(socketToSend, 0);
+			Statement st = conn.createStatement();
+			ResultSet allowedAccess = st.executeQuery("SELECT 1 FROM TableLevelAuthorization WHERE " +
+					" TableName = '" + tokens[1].toLowerCase() +
+					"' AND ColumnName = '" + tokens[3].toLowerCase() + 
+					"' AND AccessAuth & B'" + tokens[4] + "'  >= B'0000000001'");
+			if (!allowedAccess.next()) { //Not allowed Access
+				ZFrame frame = new ZFrame("No");
+				frame.send(socketToSend, 0);
+			} else { // Allowed Access
+				handlePUTAfterAllowedAccess(socketToSend, tokens, st);
+			}
+			
+			allowedAccess.close();
+			st.close();
 			
 			// Now replicate. Each one spawns a thread
 			System.out.println("Replicating In Other Nodes");
@@ -265,6 +268,37 @@ public class StorageNode {
 			// spawn a new thread to handle this.
 			handoffToCoordinator(socketToSend, requestKey, nodeToHandle);
 		}
+	}
+
+	private void handlePUTAfterAllowedAccess(final Socket socketToSend,
+			String[] tokens, Statement st) throws SQLException {
+		ResultSet isRowPresent = st.executeQuery("SELECT 1 FROM "
+				+ tokens[1] + " WHERE ROWID = '" + tokens[2] + "'");
+		if (isRowPresent.next()) // execute update
+		{
+			System.out.println("UPDATE " + tokens[1] + " SET " + tokens[3]
+					+ "_get = B'" + tokens[5] + "' , "
+					+ tokens[3] + "_put = B'" + tokens[6] + "' WHERE ROWID = '" + tokens[2] + "'");
+			
+			st.execute("UPDATE " + tokens[1] + " SET " + tokens[3]
+					+ "_get = B'" + tokens[5] + "' , "
+					+ tokens[3] + "_put = B'" + tokens[6] + "' WHERE ROWID = '" + tokens[2] + "'");
+		}
+		else {
+			//PUT;tablename;key;cf_columnname;UserAuthBitVector;GetAuthBitVector;PutAuthBitVector
+			System.out.println("INSERT INTO " + tokens[1] + 
+					" (ROWID, " + tokens[3] + "_get, " + tokens[3] + "_put) " +
+					" VALUES( '" + tokens[2] + "', B'" + tokens[5] + "' , B'" + tokens[6] + "')");
+			
+			st.execute("INSERT INTO " + tokens[1] + 
+					" (ROWID, " + tokens[3] + "_get, " + tokens[3] + "_put) " +
+					" VALUES( '" + tokens[2] + "', B'" + tokens[5] + "' , B'" + tokens[6] + "')");
+		}
+		isRowPresent.close();
+		
+		// first send reply to client
+		ZFrame frame = new ZFrame("Yes");
+		frame.send(socketToSend, 0);
 	}
 
 	private void handoffToCoordinator(final Socket socketToSend,

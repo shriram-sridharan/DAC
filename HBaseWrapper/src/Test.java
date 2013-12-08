@@ -95,24 +95,24 @@ public class Test {
 //
 //		
 //		
-//		Put p = new Put(Bytes.toBytes("Tom"));
-//		p.add(Bytes.toBytes("Age"), Bytes.toBytes(""), Bytes.toBytes("35"));
-//		objHT.put(p);
+		Put p = new Put(Bytes.toBytes("Tom"));
+		p.add(Bytes.toBytes("Age"), Bytes.toBytes(""), Bytes.toBytes("35"));
+		objHT.put(p);
 		
-		
-		   Get g = new Get(Bytes.toBytes("Tom"));
-           g.addColumn(Bytes.toBytes("Age"), Bytes.toBytes(""));
-           g.addColumn(Bytes.toBytes("SSN"), Bytes.toBytes(""));
-
-           try {
-                   Result r = objHT.get(g);
-//                   HBaseUtils.printResult(r);
-                   
-           } catch (IOException e) {
-                   // TODO Auto-generated catch block
-                   e.printStackTrace();
-           }
-
-		
+//		
+//		   Get g = new Get(Bytes.toBytes("Tom"));
+//           g.addColumn(Bytes.toBytes("Age"), Bytes.toBytes(""));
+//           g.addColumn(Bytes.toBytes("SSN"), Bytes.toBytes(""));
+//
+//           try {
+//                   Result r = objHT.get(g);
+////                   HBaseUtils.printResult(r);
+//                   
+//           } catch (IOException e) {
+//                   // TODO Auto-generated catch block
+//                   e.printStackTrace();
+//           }
+//
+//		
 	}	
 }

@@ -13,3 +13,4 @@ create table userdata (rowid varchar, age_get bit(10), age_put bit(10), ssn_get 
 
 select 1 from userdata where rowid = 'www.abc.com2' and age_put & B'0111111001' >= B'0000000001';
 GET;userdata;www.abc.com2;age;0111111001
+PUT;userdata;www.abc.com2;age;0111111001;0111111001;0111111001
