@@ -103,7 +103,7 @@ public class StorageNode {
 		
 		// GET;tablename;key;cf_columnname;UserAuthBitVector 
 		Statement st = conn.createStatement();
-		System.out.println("[REQUEST HANDLER] Query Postgres if Access Granted");
+//		System.out.println("[REQUEST HANDLER] Query Postgres if Access Granted");
 		ResultSet rs = st.executeQuery(" SELECT 1 FROM " + tokens[1] + " WHERE " + " ROWID = '"
 				+ tokens[2] + "' AND " + tokens[3] + "_get & " + tokens[4]
 				+ " :: bit(10)  >= B'0000000001'");

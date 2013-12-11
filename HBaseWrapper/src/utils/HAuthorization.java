@@ -66,15 +66,11 @@ public HAuthorization(String userName) {
 			int i = 0;
 			boolean first = true;
 			String userauth = "";
-			for(String auth : authValues) {
-				userauth = userauth + "\""+auth + "\","; 
-			}
-			
-			System.out.println(userName + " - You have " + userauth + " Role(s)");
 			
 			for(KeyValue kv1 : r.raw()) {
 				if(first == false) {
 				String s = Bytes.toString(kv1.getValue());
+				userauth = userauth + "\""+s + "\","; 
 				//System.out.println(s);
 				this.authValues[i ++] =s;
 				//System.out.println("fdsfs" + " " +this.authValues[i-1]);
@@ -83,10 +79,12 @@ public HAuthorization(String userName) {
 					first = false;
 				}
 			}
+			System.out.println("\n\n===========================================================================");
+			System.out.println("Welcome [" + userName + "]!!!!! - You have " + userauth + " Role Permissions");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
+		
 	}
 	public void setBitVector(String bitVector) {
 		this.bitVector = bitVector;

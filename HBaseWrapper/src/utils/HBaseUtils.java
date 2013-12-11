@@ -129,11 +129,13 @@ public class HBaseUtils {
 	public static void printResult(Result r) {
 		for(KeyValue kv : r.raw()) {
 			System.out.print(new String(kv.getRow()) + " ");
-			System.out.print(new String(kv.getFamily()) + ":");
+			System.out.print("\t"+new String(kv.getFamily()) + ":");
 			System.out.print(new String(kv.getQualifier()) + " ");
-			System.out.print(kv.getTimestamp() + " ");
-			System.out.println(new String(kv.getValue()));
-
+			if(new String(kv.getQualifier()).equals("MaritalStatus"))
+				System.out.print("\t"+kv.getTimestamp() + " ");
+			else
+				System.out.print("\t\t"+kv.getTimestamp() + " ");
+			System.out.println("\t"+ new String(kv.getValue()));
 		}
 
 	}

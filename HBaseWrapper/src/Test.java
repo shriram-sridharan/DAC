@@ -7,6 +7,7 @@ import java.util.Scanner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -78,10 +79,22 @@ public class Test {
 	
 	public static void main(String[] args) throws Exception {
 		//insertData("/scratch/pradap/courses/cs739/data/userdata.txt");
-		
-		
-		System.out.println("============= Welcome!!!!! " + args[0] + " =============== ");
+		args = new String[3];
+		args[0] = new String("User1");
+		args[1] = new String("GET");
+		args[2] = new String("System");
 		Configuration conf = HBaseConfiguration.create();
+		
+		if("UPGRADE".equals(args[1])){
+			HTable hTable = new HTable(conf, "AuthorizationInfo");
+			System.out.println("\n\n===============================================================");
+			System.out.println("[UPGRADING] " + args[0] + " to have " + args[2] + " previleges\n");
+			Put p = new Put(Bytes.toBytes(args[0]));
+			p.add(Bytes.toBytes("Role"), Bytes.toBytes("1"), Bytes.toBytes(args[2]));
+			hTable.put(p);
+			return;
+		}
+		
 		HAuthorization authInfo = new HAuthorization(args[0]);
 
 		HTableAuth objHT = null;
@@ -95,30 +108,29 @@ public class Test {
 		GlueZMQ.setIPAddres("127.0.0.1");
 		GlueZMQ.setPortNumber("5555");
 
-		if (args[1] == "GET") {
-			Get g = new Get(Bytes.toBytes("Name1"));
-			g.addColumn(Bytes.toBytes("Personal"), Bytes.toBytes("SSN"));
-			//g.addColumn(Bytes.toBytes("Personal"), Bytes.toBytes("Age"));
-			g.addColumn(Bytes.toBytes("Personal"), Bytes.toBytes("MaritalStatus"));
-			
-			try {
-				Result r = objHT.get(g);
-				
-				if(r != null)
-					HBaseUtils.printResult(r);
-
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		if ("GET".equals(args[1])) {
+			System.out.println("[AUTHORIZING AND GETTING RESULTS] Querying RowID with Name1..Name5");
+			System.out.println("\nRowID\tColumnFamily:Column\tTimeStamp\tValue\n");
+			for(int i = 1; i <= 5; i++) {
+				Get g = new Get(Bytes.toBytes("Name" + i));
+				g.addColumn(Bytes.toBytes("Personal"), Bytes.toBytes("Age"));
+				g.addColumn(Bytes.toBytes("Personal"), Bytes.toBytes("SSN"));
+				g.addColumn(Bytes.toBytes("Personal"), Bytes.toBytes("MaritalStatus"));
+	
+				try {
+					Result r = objHT.get(g);
+					if (r != null)
+						HBaseUtils.printResult(r);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				System.out.println();
 			}
-
-
 		} else {
 			Put p = new Put(Bytes.toBytes("Tom"));
 			p.add(Bytes.toBytes("Age"), Bytes.toBytes(""), Bytes.toBytes("35"));
 			objHT.put(p);
 		}
-
 
 
 

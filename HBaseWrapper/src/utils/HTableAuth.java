@@ -31,12 +31,12 @@ public class HTableAuth extends HTable {
 		//GET;tablename;key;cf;columnname;AuthBitVector
 
 		StringBuffer objSB = new StringBuffer();
-		objSB.append("GET;").append(tableName).append(";").append(key).append(";").append(columnFamily).append(";").append(qualifier).append(";")
+		objSB.append("GET;").append(tableName).append(";").append(key).append(";").append(columnFamily).append("_").append(qualifier).append(";")
 		.append(objAuth.getBitVector());
-		System.out.println(objSB.toString());
+//		System.out.println(objSB.toString());
 		boolean retValue = GlueZMQ.isAuthorized(objSB.toString());
 		if(retValue == true) {
-			System.out.println("Get is authorized: ");
+//			System.out.println("Get is authorized: ");
 			return true;
 		}
 		return false;
@@ -47,10 +47,10 @@ public class HTableAuth extends HTable {
 		StringBuffer objSB = new StringBuffer();
 		objSB.append("PUT;").append(tableName).append(";").append(key).append(";").append(columnFamily).append(";").append(";")
 		.append(objAuth.getBitVector());
-		System.out.println(objSB.toString());
+//		System.out.println(objSB.toString());
 		boolean retValue = GlueZMQ.isAuthorized(objSB.toString());
 		if(retValue == true) {
-			System.out.println("Put is authorized: ");
+//			System.out.println("Put is authorized: ");
 			return true;
 		}
 		return false;
@@ -90,7 +90,7 @@ public class HTableAuth extends HTable {
 
 					if(qualifier.length() > 0) {
 						if(isGetAuthorized(rowKey, columnFamily, qualifier) == true) {
-							System.out.println("CF: " + columnFamily + "; qualifier : " + qualifier);
+//							System.out.println("CF: " + columnFamily + "; qualifier : " + qualifier);
 							relayGet.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(qualifier));
 							flag = true;
 						}
@@ -101,7 +101,7 @@ public class HTableAuth extends HTable {
 
 			}
 			if(flag == true) {
-				System.out.println("Returning\n");
+//				System.out.println("Returning\n");
 				return super.get(relayGet);
 			}
 
@@ -175,6 +175,4 @@ public class HTableAuth extends HTable {
 		}
 
 	}
-
-
 }
