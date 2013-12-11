@@ -65,6 +65,13 @@ public HAuthorization(String userName) {
 			this.authValues = new String[r.list().size()-1];
 			int i = 0;
 			boolean first = true;
+			String userauth = "";
+			for(String auth : authValues) {
+				userauth = userauth + "\""+auth + "\","; 
+			}
+			
+			System.out.println(userName + " - You have " + userauth + " Role(s)");
+			
 			for(KeyValue kv1 : r.raw()) {
 				if(first == false) {
 				String s = Bytes.toString(kv1.getValue());
@@ -77,7 +84,6 @@ public HAuthorization(String userName) {
 				}
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

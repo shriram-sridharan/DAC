@@ -13,31 +13,16 @@ java -Djava.library.path=./jzmq-installed/lib/ -jar StorageNode.jar tcp://*:5556
 java -Djava.library.path=./jzmq-installed/lib/ -jar StorageNode.jar tcp://*:5556 tcp://*:4556 3 3 jdbc:postgresql://localhost:5432/dac1 shriram ""
 
 TODO Main:
-Data Model - As of now, naive - A new data model because we are storing metadata without duplication.
+Data Model - As of now, naive - A new data model because we are storing metadata without duplication, How much data will be reduced if I store this way.
 PUT semantics - Read Accumulo
 Enhance Consistent Hashing
 EC2 - Performance + Application
-How much data will be reduced if I store this way.
 
 Access Control: 
 Role Based Access Control - Set bits for roles to indicate Read, Write?
 Administrator can set access control on table when it is created.
 During PUT, his roles are checked to see if he has permission to put. If he has, he sets the authorizations for the object.
 PUT - will send his authorizations as well as user specified authorizations.
-
-For Presentation:
-User Based Access Control
-Live Demo in the presentation + Graphs of time taken
-consistent hashing - MD5 Hash of objects and key
-replication - first send then replicate - coordinator
-Presentation - Setup as Motivation + Implementation + Evaluation
-Motivation - 
-1. Need to convince why this idea is important and what is the potential value in this idea.
- => Add dynamoDB latest addition to Fine Grained Access Control.
-2. Decoupled allows ability to change/represent the access control data model in a concise manner + give more sophisticated access control mechanisms.
-Eg: put, get in accumulo.
-3. Small demo in 838 with a web application.
-Get, Put handled - not delete, create/alter
 
 TODO:
 Redistribution of keys after a new worker is added.

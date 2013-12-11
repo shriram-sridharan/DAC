@@ -8,7 +8,7 @@ public  class GlueZMQ {
 	private static String portNumber;
 	
 	public static boolean isAuthorized(String request) {
-		/*
+		
 		ZMQ.Context context = ZMQ.context(1);
 		ZMQ.Socket socket = context.socket(ZMQ.REQ);
 		socket.connect ("tcp://" + IPAddress+ ":"+portNumber);
@@ -23,8 +23,8 @@ public  class GlueZMQ {
 			return true;
 		} else {
 			return false;
-		}*/
-		return true;
+		}
+		//return true;
 	}
 	/**
 	 * @param iPAddres the iPAddres to set

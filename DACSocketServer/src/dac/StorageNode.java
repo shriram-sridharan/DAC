@@ -36,6 +36,7 @@ public class StorageNode {
 	private ConsistentHashingImpl consistentHashingImpl;
 	private int numberOfReplicas;
 	public int putRequestsHandled = 0;
+	private int getRequestsHandled = 0;
 	
 	public StorageNode(String lbconnectToEndPoint, String mySocketBindEndPoint,
 			int virtualServersPerIp, int noReplicas, String postgresurl, String username,
@@ -60,12 +61,12 @@ public class StorageNode {
 				rand.nextInt(0x10000));
 		mySocket.setIdentity(identity.getBytes());
 		mySocket.bind(mySocketBindEndPoint); // end point is ip:port. *=>localhost
-		System.out.println("Bound my socket to - " + mySocketBindEndPoint);
+		System.out.println("\n[REQUEST HANDLER] Bound to Address - " + mySocketBindEndPoint);
 	}
 
 	private void createNewLBWorkerSocket(boolean destroy) {
 		if (destroy) {
-			System.out.println("I: Destroying worker and creating new one. This will flush old queues");
+//			System.out.println("[REQUEST RECEIVER] Destroying worker and creating new one");
 			ctx.destroySocket(lbSocket);
 		}
 		lbSocket = ctx.createSocket(ZMQ.DEALER);
@@ -77,14 +78,14 @@ public class StorageNode {
 		lbSocket.connect(lbconnectToEndPoint); // end point is ip:port. *=>localhost
 		
 		// Tell queue we're ready for work
-		System.out.println("I: worker ready: " + identity);
+//		System.out.println("[REQUEST RECEIVER] worker ready: " + identity);
 		ZFrame frame = new ZFrame(PPP_READY + ";" + mySocketBindEndPoint);
 		frame.send(lbSocket, 0);
 	}
 
 	private int sleepAndBackoffInterval(int interval) {
-		System.out.println("W: heartbeat failure, can't reach queue\n");
-		System.out.println(String.format("W: reconnecting in %d msec\n", interval));
+		System.out.println("\n[HEARTBEAT] Failure.. Unable to contact Load Balancer\n");
+		System.out.println(String.format("[HEARTBEAT-EXPONENTIAL BACKOFF] Reconnecting in %d msec\n", interval));
 		try {
 			Thread.sleep(interval);
 		} catch (InterruptedException e) {
@@ -102,6 +103,7 @@ public class StorageNode {
 		
 		// GET;tablename;key;cf_columnname;UserAuthBitVector 
 		Statement st = conn.createStatement();
+		System.out.println("[REQUEST HANDLER] Query Postgres if Access Granted");
 		ResultSet rs = st.executeQuery(" SELECT 1 FROM " + tokens[1] + " WHERE " + " ROWID = '"
 				+ tokens[2] + "' AND " + tokens[3] + "_get & " + tokens[4]
 				+ " :: bit(10)  >= B'0000000001'");
@@ -143,20 +145,22 @@ public class StorageNode {
 		} else if (data.startsWith("ADD")) {
 			String[] newWorkers = data.split(";");
 			for(int i = 1; i < newWorkers.length; i++) {
-				System.out.println("++Adding new worker in - " + mySocketBindEndPoint + ". the guy s - " + newWorkers[i]);
+				System.out.println("\n[ADD WORKER] - Address:" + newWorkers[i]);
 				consistentHashingImpl.add(newWorkers[i]);
-//				consistentHashingImpl.print();
 			}
+			if(newWorkers.length > 1)
+				consistentHashingImpl.print();
 		} else if (data.startsWith("PURGE")) {
 			String[] oldWorkers = data.split(";");
 			for(int i = 1; i < oldWorkers.length; i++) {
-				System.out.println("--Deleted worker in - " + mySocketBindEndPoint + ". the guy s - " + oldWorkers[i]);
+				System.out.println("\n[DELETE WORKER] - Address:" + oldWorkers[i]);
 				consistentHashingImpl.remove(oldWorkers[i]);
-//				consistentHashingImpl.print();
 			}
+			if(oldWorkers.length > 1)
+				consistentHashingImpl.print();
 		}
 		else {
-			System.out.println("E: invalid message\n");
+//			System.out.println("E: invalid message\n");
 			msg.dump(System.out);
 		}
 		msg.destroy();
@@ -183,7 +187,7 @@ public class StorageNode {
 		} else if ("PUT".equals(tokens[0])) {
 			handlePUT(socketToSend, requestKey, tokens);
 		} else if ("REPL".equals(tokens[0])) {
-			System.out.println("Handling PUT Replicated");
+			System.out.println("\n[REQUEST HANDLER] Replicating PUT");
 			// REPL;PUT;tablename;key;cf_columnname;UserAuthBitVector;GetAuthBitVector;PutAuthBitVector
 			// Check if allowed to execute put
 			for(int i = 1; i < 8; i++)
@@ -206,20 +210,23 @@ public class StorageNode {
 	    	return;
 		}
 		
-		System.out.println(tokens[1]);
-		System.out.println(tokens[2]);
-		System.out.println(tokens[3]);
-		System.out.println(tokens[4]);
+//		System.out.println(tokens[1]);
+//		System.out.println(tokens[2]);
+//		System.out.println(tokens[3]);
+//		System.out.println(tokens[4]);
 		
 		final String nodeToHandle = consistentHashingImpl.get(tokens[1] + tokens[2]); //tablename + key
 		if(nodeToHandle.equals(mySocketBindEndPoint))
 		{
-			System.out.println("Acting as Coordinator for GET\n");
+			System.out.println("[REQUEST HANDLER] Handling GET");
+			getRequestsHandled++;
+//			System.out.println("Acting as Coordinator for GET\n");
 			ZFrame frame = new ZFrame (isAccessGranted(tokens) ? "Yes" : "No");
 			frame.send(socketToSend, 0);
 		} else {
-			System.out.println("Forwarding GET to Coordinator " + nodeToHandle + "\n");
+//			System.out.println("Forwarding GET to Coordinator " + nodeToHandle + "\n");
 			// spawn a new thread to handle this.
+			System.out.println("[REQUEST HANDLER] Forwarding GET to Storage Node with the PARTITION");
 			handoffToCoordinator(socketToSend, requestKey, nodeToHandle);
 		}
 	}
@@ -241,7 +248,7 @@ public class StorageNode {
 		String nodeToHandle = listofnodestorepl.get(0);
 		if(nodeToHandle.equals(mySocketBindEndPoint))
 		{
-			System.out.println("\nActing as Coordinator to Handle PUT");
+			System.out.println("\n[REQUEST HANDLER] Handling PUT");
 			
 			Statement st = conn.createStatement();
 			ResultSet allowedAccess = st.executeQuery("SELECT 1 FROM TableLevelAuthorization WHERE " +
@@ -259,12 +266,14 @@ public class StorageNode {
 			st.close();
 			
 			// Now replicate. Each one spawns a thread
-			System.out.println("Replicating In Other Nodes");
+//			System.out.println("Replicating In Other Nodes");
+			System.out.println("[REQUEST HANDLER] Replicating in Other Nodes \n");
 			for (int i = 1; i < listofnodestorepl.size(); i++)
 				replicateData(requestKey, listofnodestorepl.get(i));
 			
 		} else {
-			System.out.println("\nForwarding PUT to - " + nodeToHandle + " - as per consistent Hashing");
+			System.out.println("\n[REQUEST HANDLER] Forwarding PUT to Coordinator");
+//			System.out.println("\nForwarding PUT to - " + nodeToHandle + " - as per consistent Hashing");
 			// spawn a new thread to handle this.
 			handoffToCoordinator(socketToSend, requestKey, nodeToHandle);
 		}
@@ -276,20 +285,20 @@ public class StorageNode {
 				+ tokens[1] + " WHERE ROWID = '" + tokens[2] + "'");
 		if (isRowPresent.next()) // execute update
 		{
-			System.out.println("UPDATE " + tokens[1] + " SET " + tokens[3]
-					+ "_get = B'" + tokens[5] + "' , "
-					+ tokens[3] + "_put = B'" + tokens[6] + "' WHERE ROWID = '" + tokens[2] + "'");
-			
+//			System.out.println("UPDATE " + tokens[1] + " SET " + tokens[3]
+//					+ "_get = B'" + tokens[5] + "' , "
+//					+ tokens[3] + "_put = B'" + tokens[6] + "' WHERE ROWID = '" + tokens[2] + "'");
+//			
 			st.execute("UPDATE " + tokens[1] + " SET " + tokens[3]
 					+ "_get = B'" + tokens[5] + "' , "
 					+ tokens[3] + "_put = B'" + tokens[6] + "' WHERE ROWID = '" + tokens[2] + "'");
 		}
 		else {
 			//PUT;tablename;key;cf_columnname;UserAuthBitVector;GetAuthBitVector;PutAuthBitVector
-			System.out.println("INSERT INTO " + tokens[1] + 
-					" (ROWID, " + tokens[3] + "_get, " + tokens[3] + "_put) " +
-					" VALUES( '" + tokens[2] + "', B'" + tokens[5] + "' , B'" + tokens[6] + "')");
-			
+//			System.out.println("INSERT INTO " + tokens[1] + 
+//					" (ROWID, " + tokens[3] + "_get, " + tokens[3] + "_put) " +
+//					" VALUES( '" + tokens[2] + "', B'" + tokens[5] + "' , B'" + tokens[6] + "')");
+//			
 			st.execute("INSERT INTO " + tokens[1] + 
 					" (ROWID, " + tokens[3] + "_get, " + tokens[3] + "_put) " +
 					" VALUES( '" + tokens[2] + "', B'" + tokens[5] + "' , B'" + tokens[6] + "')");
@@ -321,7 +330,7 @@ public class StorageNode {
 //				System.out.println("Blocking Sent to other node to handle");
 				ZFrame recvFrame = ZFrame.recvFrame(onthefly);
 				String coordinatorResponse = new String(recvFrame.getData());
-				System.out.println("Forwarded Node Replied Back with - " + coordinatorResponse);
+//				System.out.println("Forwarded Node Replied Back with - " + coordinatorResponse);
 
 				ZFrame frame = new ZFrame(coordinatorResponse);
 				frame.send(socketToSend, 0);
@@ -350,7 +359,7 @@ public class StorageNode {
 
 				ZFrame recvFrame = ZFrame.recvFrame(onthefly);
 				String coordinatorResponse = new String(recvFrame.getData());
-				System.out.println("Replication Result at Site - " + coordinatorResponse);
+//				System.out.println("Replication Result at Site - " + coordinatorResponse);
 				onthefly.close();
 			}
 		};
@@ -461,14 +470,14 @@ public class StorageNode {
 					long startTime = System.currentTimeMillis();
 					int prev = 0;
 					while (true) {
-						if (sn.putRequestsHandled % 5 == 0
-								&& prev != sn.putRequestsHandled) {
-							prev = sn.putRequestsHandled;
 							long timenow = System.currentTimeMillis() - startTime;
+							if(timenow > 1000) {
+								prev++;
+								startTime = System.currentTimeMillis();
 							System.out.println("Report: "
-									+ sn.putRequestsHandled + " handled in "
-									+ timenow + " (ms)");
-						}
+									+ sn.getRequestsHandled + " handled in "
+									+ prev*1000 + " (ms)");
+							}
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -478,6 +487,6 @@ public class StorageNode {
 
 		t2.start(); // start the forwarded request handler socket first
 		t1.start();
-		t3.start();
+//		t3.start();
 	}
 }

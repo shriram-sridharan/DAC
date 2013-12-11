@@ -2,7 +2,6 @@ package utils;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
@@ -16,7 +15,6 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.zeromq.ZMQ;
 
 public class HTableAuth extends HTable {
     private HAuthorization objAuth;
@@ -53,7 +51,7 @@ public class HTableAuth extends HTable {
          * New Authorization Rule - PUT;tablename;key;cf_columnname;UserAuthBitVector;GetAuthBitVector;PutAuthBitVector 
          */
         StringBuffer objSB = new StringBuffer();
-        objSB.append("PUT;").append(tableName).append(";").append(key).append(";").append("ssn").append(";")
+        objSB.append("PUT;").append(tableName).append(";").append(key).append(";").append(columnFamily).append(";")
             .append(objAuth.getBitVector()).append(";").append(objAuth.getBitVector()).append(";").append(objAuth.getBitVector());
         //		objSB.append("PUT;").append(key).append(";").append(columnFamily).append(";")
         //		.append(objAuth.getBitVector());

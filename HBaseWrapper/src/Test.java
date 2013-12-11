@@ -78,41 +78,36 @@ public class Test {
 	public static void main(String[] args) throws Exception {
 //		insertData("/home/shriram/Desktop/DAC/HBaseWrapper/src/userdata.txt");
 		
+		System.out.println("============= Welcome!!!!! " + args[0] + " =============== ");
 		Configuration conf = HBaseConfiguration.create();
-		HAuthorization authInfo = new HAuthorization("User1");
-		
-		
+		HAuthorization authInfo = new HAuthorization(args[0]);
+
 		HTableAuth objHT = null;
 		try {
-		 objHT = new HTableAuth(authInfo, conf, "userdata");
+			objHT = new HTableAuth(authInfo, conf, "userdata");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//System.out.println(authInfo.getBitVector());
-		GlueZMQ.setIPAddres("localhost");
+
+		GlueZMQ.setIPAddres("127.0.0.1");
 		GlueZMQ.setPortNumber("5555");
-//
-//		
-//		
-		Put p = new Put(Bytes.toBytes("Tom"));
-		p.add(Bytes.toBytes("Age"), Bytes.toBytes(""), Bytes.toBytes("35"));
-		objHT.put(p);
-		
-//		
-//		   Get g = new Get(Bytes.toBytes("Tom"));
-//           g.addColumn(Bytes.toBytes("Age"), Bytes.toBytes(""));
-//           g.addColumn(Bytes.toBytes("SSN"), Bytes.toBytes(""));
-//
-//           try {
-//                   Result r = objHT.get(g);
-////                   HBaseUtils.printResult(r);
-//                   
-//           } catch (IOException e) {
-//                   // TODO Auto-generated catch block
-//                   e.printStackTrace();
-//           }
-//
-//		
+
+		if (args[1] == "GET") {
+			Get g = new Get(Bytes.toBytes("Tom"));
+			g.addColumn(Bytes.toBytes("Age"), Bytes.toBytes(""));
+			g.addColumn(Bytes.toBytes("SSN"), Bytes.toBytes(""));
+
+			try {
+				Result r = objHT.get(g);
+				HBaseUtils.printResult(r);
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else {
+			Put p = new Put(Bytes.toBytes("Tom"));
+			p.add(Bytes.toBytes("Age"), Bytes.toBytes(""), Bytes.toBytes("35"));
+			objHT.put(p);
+		}
 	}	
 }

@@ -72,7 +72,7 @@ public class LoadBalancer extends Thread {
     		frame.send(backend, 0); // 0 => final part
     	}
     	
-		System.out.println("Added New Worker - " + newworker.identity + " socket - " + newworker.storageNodeSocket);
+		System.out.println("\n[ADD WORKER/BROADCAST]: Identity - " + newworker.identity + " Address - " + newworker.storageNodeSocket);
 		workers.add(newworker);
 		
 		broadcastToNewWorker += ";" + newworker.storageNodeSocket;
@@ -87,6 +87,7 @@ public class LoadBalancer extends Thread {
     	// optimistic. worker may be expired
 		nextWorkerToGet = (nextWorkerToGet + 1) % workers.size();
 		Worker worker = workers.get(nextWorkerToGet);
+		System.out.println("[REQUEST HANDLING] Sending to Address - " + worker.address);
 		return worker.address;
     }
 
@@ -98,7 +99,7 @@ public class LoadBalancer extends Thread {
         while (it.hasNext()) {
             Worker worker = it.next();
             if (System.currentTimeMillis() > worker.expiry) {
-            	System.out.println("Deleted Worker - " + worker.identity + " socket - " + worker.storageNodeSocket);
+            	System.out.println("\n[DELETE WORKER/BROADCAST]: Identity - " + worker.identity + " Address - " + worker.storageNodeSocket);
             	broadcastString = broadcastString + ";" + worker.storageNodeSocket;
             	it.remove();
             }
@@ -141,7 +142,7 @@ public class LoadBalancer extends Thread {
 		    	updateExpiry(new String(address.getData()));
 		    }
 		    else {
-		    	System.out.println ("E: invalid message from worker");
+//		    	System.out.println ("E: invalid message from worker");
 		        msg.dump(System.out);
 		        msg.destroy();
 		    }
@@ -154,7 +155,7 @@ public class LoadBalancer extends Thread {
 	}
 
 	public void startLoadBalancer() {
-        System.out.println("Load Balancer Started...");
+        System.out.println("[LOAD BALANCER STARTED]");
         //  List of available workers
         //  Send out heartbeats at regular intervals
         long next_heartbeat_send_at = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
@@ -179,7 +180,7 @@ public class LoadBalancer extends Thread {
                 handleMessageFromBackend(frontend, msg);
             }
             if (items [1].isReadable()) {
-            	System.out.println("Routing Client Request - " + workers.size());
+//            	System.out.println("Routing Client Request - " + workers.size());
                 //  Now get next client request, route to next worker
                 ZMsg msg = ZMsg.recvMsg (frontend);
                 if (msg == null)

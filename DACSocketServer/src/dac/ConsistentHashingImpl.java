@@ -99,7 +99,7 @@ public class ConsistentHashingImpl implements IConsistentHashing {
 	}
 	
 	public void print() {
-		System.out.println("\nPrinting ConsistentHash Table");
+		System.out.println("\n[CONSISTENT HASHING] Printing Consistent Hash Table");
 		for(String node: circle.keySet())
 			System.out.println(node + " - " + circle.get(node));
 	}
