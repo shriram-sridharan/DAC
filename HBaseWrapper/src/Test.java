@@ -7,7 +7,6 @@ import java.util.Scanner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -15,6 +14,7 @@ import utils.GlueZMQ;
 import utils.HAuthorization;
 import utils.HBaseUtils;
 import utils.HTableAuth;
+
 
 
 
@@ -65,7 +65,7 @@ public class Test {
 					HBaseUtils.creatTable("userdata", tokens);
 					first = false;
 				} else {
-					HBaseUtils.addRecord("userdata", tokens[0], tokens[1], "", tokens[3]);
+					HBaseUtils.addRecord("userdata", tokens[0], tokens[1], tokens[2], tokens[3]);
 				}
 			}
 				
@@ -76,7 +76,8 @@ public class Test {
 	
 	
 	public static void main(String[] args) throws Exception {
-//		insertData("/home/shriram/Desktop/DAC/HBaseWrapper/src/userdata.txt");
+		//insertData("/scratch/pradap/courses/cs739/data/userdata.txt");
+		
 		
 		Configuration conf = HBaseConfiguration.create();
 		HAuthorization authInfo = new HAuthorization("User1");
@@ -91,28 +92,49 @@ public class Test {
 		}
 		//System.out.println(authInfo.getBitVector());
 		GlueZMQ.setIPAddres("localhost");
-		GlueZMQ.setPortNumber("5555");
-//
-//		
-//		
+		GlueZMQ.setPortNumber("15555");
+		Get g = new Get(Bytes.toBytes("Name1"));
+		g.addColumn(Bytes.toBytes("Personal"), Bytes.toBytes("SSN"));
+		//g.addColumn(Bytes.toBytes("Personal"), Bytes.toBytes("Age"));
+		g.addColumn(Bytes.toBytes("Personal"), Bytes.toBytes("MaritalStatus"));
+		
+		try {
+			Result r = objHT.get(g);
+			
+			if(r != null)
+				HBaseUtils.printResult(r);
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+
+
+		
+/*		
 		Put p = new Put(Bytes.toBytes("Tom"));
 		p.add(Bytes.toBytes("Age"), Bytes.toBytes(""), Bytes.toBytes("35"));
-		objHT.put(p);
+		objHT.put(p);*/
+		/*
 		
-//		
-//		   Get g = new Get(Bytes.toBytes("Tom"));
-//           g.addColumn(Bytes.toBytes("Age"), Bytes.toBytes(""));
-//           g.addColumn(Bytes.toBytes("SSN"), Bytes.toBytes(""));
-//
-//           try {
-//                   Result r = objHT.get(g);
-////                   HBaseUtils.printResult(r);
-//                   
-//           } catch (IOException e) {
-//                   // TODO Auto-generated catch block
-//                   e.printStackTrace();
-//           }
-//
-//		
+		   Get g = new Get(Bytes.toBytes("user995698996184959679"));
+           g.addColumn(Bytes.toBytes("family"), Bytes.toBytes("field0"));
+           g.addColumn(Bytes.toBytes("family"), Bytes.toBytes("field1"));
+           g.addColumn(Bytes.toBytes("family"), Bytes.toBytes("field2"));
+           
+           //g.addColumn(Bytes.toBytes("SSN"), Bytes.toBytes(""));
+
+           try {
+                   Result r = objHT.get(g);
+                   if(r != null)
+                	   HBaseUtils.printResult(r);
+                   
+           } catch (IOException e) {
+                   // TODO Auto-generated catch block
+                   e.printStackTrace();
+           }
+
+		*/
 	}	
 }
